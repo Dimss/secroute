@@ -2,9 +2,11 @@ package main
 
 import (
 	"fmt"
-	"os"
-	"github.com/spf13/cobra"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+	"os"
+	"strings"
 )
 
 var rootCmd = &cobra.Command{
@@ -12,22 +14,23 @@ var rootCmd = &cobra.Command{
 	Short: "SecRoute Webhook - enforce creation of secure routes",
 }
 
-var webhookServerCmd = &cobra.Command{
-	Use:   "server",
-	Short: "Start HTTP server for processing OCP Routes object mutation",
-	Run: func(cmd *cobra.Command, args []string) {
-		logrus.Info("Starting up webhook server...")
-
-	},
-}
-
 func init() {
-	rootCmd.AddCommand(webhookServerCmd)
+	// Init config
+	//cobra.OnInitialize(initConfig)
+	// Setup commands
+	rootCmd.AddCommand(runWebhookServerCmd())
 	// Init log
 	logrus.SetOutput(os.Stdout)
 	logrus.SetReportCaller(true)
 	logrus.SetFormatter(&logrus.TextFormatter{FullTimestamp: true})
-
+}
+func initConfig() {
+	viper.SetConfigType("json")
+	viper.SetConfigName("config")
+	viper.AddConfigPath(".")
+	viper.SetEnvPrefix("SECRO")
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	viper.AutomaticEnv()
 }
 
 func main() {
