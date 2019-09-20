@@ -14,11 +14,13 @@ var rootCmd = &cobra.Command{
 	Short: "SecRoute Webhook - enforce creation of secure routes",
 }
 
+
+
 func init() {
 	// Init config
-	//cobra.OnInitialize(initConfig)
+	cobra.OnInitialize(initConfig)
 	// Setup commands
-	rootCmd.AddCommand(runWebhookServerCmd())
+	rootCmd.AddCommand(runWebhookServerCmd)
 	// Init log
 	logrus.SetOutput(os.Stdout)
 	logrus.SetReportCaller(true)

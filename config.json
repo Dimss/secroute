@@ -1,0 +1,6 @@
+{
+  "http": {
+    "crt": "/Users/dima/.go/src/github.com/secroute/deploy/setuptls/webhook_deployment/server.csr",
+    "key": "/Users/dima/.go/src/github.com/secroute/deploy/setuptls/webhook_deployment/server.key"
+  }
+}
