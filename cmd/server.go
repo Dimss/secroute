@@ -1,42 +1,49 @@
 package main
 
 import (
+	"crypto/tls"
+	"github.com/secroute/pkg/routewebhook"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+	"net/http"
 )
 
 var runWebhookServerCmd = &cobra.Command{
 	Use:   "server",
 	Short: "Start HTTP server for processing OCP Routes object mutation",
 	Run: func(cmd *cobra.Command, args []string) {
-		logrus.Info("Starting up webhook server...")
+		StartHttpRouter()
 
 	},
 }
 
-
 func StartHttpRouter() {
-	//cert := viper.GetString("http.crt")
-	//key := viper.GetString("http.key")
-	//pair, err := tls.LoadX509KeyPair(cert, key)
-	//if err != nil {
-	//	logrus.Error("Failed to load key pair: %v", err)
-	//}
-	//// Buffered channel for AD users
-	//adUsersChan := make(chan string, 100)
-	//// Watch and process ad users when they pushed to adUsersChan channel
-	//
-	//// Handel admission webhook request
-	//http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-	//	oauthtokenwebhook.WebHookHandler(w, r, adUsersChan)
-	//})
-	//// Handle health check request
-	//http.HandleFunc("/healthz", oauthtokenwebhook.LivenessHandler)
-	//// Create HTTPS server configuration
-	//s := &http.Server{
-	//	Addr:      ":8080",
-	//	TLSConfig: &tls.Config{Certificates: []tls.Certificate{pair}},
-	//}
-	//// Start HTTPS server
-	//log.Fatal(s.ListenAndServeTLS("", ""))
+	cert := viper.GetString("http.crt")
+	key := viper.GetString("http.key")
+	pair, err := tls.LoadX509KeyPair(cert, key)
+	if err != nil {
+		logrus.Error("Failed to load key pair: %v", err)
+	}
+
+	// Handel admission validation webhook request
+	http.HandleFunc("/route/validate", func(w http.ResponseWriter, r *http.Request) {
+		routewebhook.ValidateWebHookHandler(w, r)
+	})
+	// Handel admission mutation webhook request
+	http.HandleFunc("/route/mutate", func(w http.ResponseWriter, r *http.Request) {
+		routewebhook.MutateWebHookHandler(w, r)
+	})
+	// Handle health check request
+	http.HandleFunc("/healthz", routewebhook.LivenessHandler)
+	// Create HTTPS server configuration
+	s := &http.Server{
+		Addr:      "0.0.0.0:8080",
+		TLSConfig: &tls.Config{Certificates: []tls.Certificate{pair}},
+	}
+
+	logrus.Infof("Starting HTTPS server on %v", s.Addr)
+	// Start HTTPS server
+	logrus.Fatal(s.ListenAndServeTLS("", ""))
+
 }

@@ -33,6 +33,11 @@ func initConfig() {
 	viper.SetEnvPrefix("SECRO")
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	viper.AutomaticEnv()
+	err := viper.ReadInConfig()
+	if err != nil {
+		logrus.Errorf("Unable to read config.json file, err: %s", err)
+		os.Exit(1)
+	}
 }
 
 func main() {

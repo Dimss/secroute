@@ -1,0 +1,9 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: demo-insecure-route
+  namespace: default
+spec:
+  to:
+    kind: Service
+    name: docker-registry
