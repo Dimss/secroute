@@ -5,4 +5,4 @@ metadata:
 spec:
   to:
     kind: Service
-    name: docker-registry
+    name: demo-service
