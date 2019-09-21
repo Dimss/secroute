@@ -28,14 +28,16 @@ func StartHttpRouter() {
 
 	// Handel admission validation webhook request
 	http.HandleFunc("/route/validate", func(w http.ResponseWriter, r *http.Request) {
-		routewebhook.ValidateWebHookHandler(w, r)
+		routewebhook.ValidateRouteWebHookHandler(w, r)
 	})
 	// Handel admission mutation webhook request
 	http.HandleFunc("/route/mutate", func(w http.ResponseWriter, r *http.Request) {
-		routewebhook.MutateWebHookHandler(w, r)
+		routewebhook.MutateRouteWebHookHandler(w, r)
 	})
-	// Handle health check request
-	http.HandleFunc("/healthz", routewebhook.LivenessHandler)
+	// Handel admission validation webhook request
+	http.HandleFunc("/service/validate", func(w http.ResponseWriter, r *http.Request) {
+		routewebhook.CreateRouteOnServiceWebHookHandler(w, r)
+	})
 	// Create HTTPS server configuration
 	s := &http.Server{
 		Addr:      "0.0.0.0:8080",

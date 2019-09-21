@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -19,6 +20,10 @@ var rootCmd = &cobra.Command{
 func init() {
 	// Init config
 	cobra.OnInitialize(initConfig)
+	rootCmd.PersistentFlags().StringP("kubeconfig", "k", "", "Path to kubeconfig file, default to $home/.kube/config")
+	if err := viper.BindPFlag("kubeconfig", rootCmd.PersistentFlags().Lookup("kubeconfig")); err != nil {
+		panic(err)
+	}
 	// Setup commands
 	rootCmd.AddCommand(runWebhookServerCmd)
 	// Init log
@@ -33,6 +38,21 @@ func initConfig() {
 	viper.SetEnvPrefix("SECRO")
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	viper.AutomaticEnv()
+	kubeconfig := viper.GetString("kubeconfig")
+	if kubeconfig == "" {
+		// Check if kubeconfig file exists in user's HOME
+		kubeconfig = filepath.Join(os.Getenv("HOME"), ".kube", "config")
+		_, err := os.Stat(kubeconfig)
+		if os.IsNotExist(err) {
+			// The kubeconfig wasn't passed in and not found under user's home directory, assuming inClusterConfig mode
+			logrus.Info("Unable to find kubeconfig, assuming running inside K8S cluster, gonna use inClusterConfig")
+			viper.Set("kubeconfig", "useInClusterConfig")
+		} else {
+			// Use kubeconfig from user's home directory
+			logrus.Info("Gonna use kubeconfig from user's HOME directory")
+			viper.Set("kubeconfig", kubeconfig)
+		}
+	}
 	err := viper.ReadInConfig()
 	if err != nil {
 		logrus.Errorf("Unable to read config.json file, err: %s", err)
