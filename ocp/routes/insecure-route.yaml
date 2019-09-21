@@ -6,4 +6,3 @@ spec:
   to:
     kind: Service
     name: demo-service
-
