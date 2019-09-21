@@ -46,7 +46,7 @@ func ValidateRouteWebHookHandler(w http.ResponseWriter, r *http.Request) {
 	// admission response will be sent to K8S API
 	if len(body) == 0 {
 		errMessage := "The body is empty, can't proceed the request"
-		sendAdmissionValidationRouterResponse(w, false, errMessage)
+		sendAdmissionValidationResponse(w, false, errMessage)
 		logrus.Errorf(errMessage)
 		return
 	}
@@ -56,22 +56,22 @@ func ValidateRouteWebHookHandler(w http.ResponseWriter, r *http.Request) {
 	// Try to decode body into Admission Review object
 	if _, _, err := deserializer.Decode(body, nil, &ar); err != nil {
 		logrus.Errorf("Error during deserializing request body: %v", err)
-		sendAdmissionValidationRouterResponse(w, false, "error during deserializing request body")
+		sendAdmissionValidationResponse(w, false, "error during deserializing request body")
 		return
 	}
 	// Try to unmarshal Admission Review raw object to Router
 	if err := json.Unmarshal(ar.Request.Object.Raw, &route); err != nil {
 		errMessage := "Error during unmarshaling request body"
 		logrus.Error(errMessage)
-		sendAdmissionValidationRouterResponse(w, false, errMessage)
+		sendAdmissionValidationResponse(w, false, errMessage)
 		return
 	}
 	if route.Spec.TLS == nil {
 		errMessage := fmt.Sprintf("Creation of insecure routes are forbiden, route: %v", route.Name)
 		logrus.Warn(errMessage)
-		sendAdmissionValidationRouterResponse(w, false, errMessage)
+		sendAdmissionValidationResponse(w, false, errMessage)
 	} else {
-		sendAdmissionValidationRouterResponse(w, true, "Router is secure, proceed request")
+		sendAdmissionValidationResponse(w, true, "Router is secure, proceed request")
 	}
 }
 
@@ -90,7 +90,7 @@ func MutateRouteWebHookHandler(w http.ResponseWriter, r *http.Request) {
 	// admission response will be sent to K8S API
 	if len(body) == 0 {
 		errMessage := "The body is empty, can't proceed the request"
-		sendAdmissionValidationRouterResponse(w, false, errMessage)
+		sendAdmissionValidationResponse(w, false, errMessage)
 		logrus.Errorf(errMessage)
 		return
 	}
@@ -100,19 +100,19 @@ func MutateRouteWebHookHandler(w http.ResponseWriter, r *http.Request) {
 	// Try to decode body into Admission Review object
 	if _, _, err := deserializer.Decode(body, nil, &ar); err != nil {
 		logrus.Errorf("Error during deserializing request body: %v", err)
-		sendAdmissionValidationRouterResponse(w, false, "error during deserializing request body")
+		sendAdmissionValidationResponse(w, false, "error during deserializing request body")
 		return
 	}
 	// Try to unmarshal Admission Review raw object to Router
 	if err := json.Unmarshal(ar.Request.Object.Raw, &route); err != nil {
 		errMessage := "Error during unmarshaling request body"
 		logrus.Error(errMessage)
-		sendAdmissionValidationRouterResponse(w, false, errMessage)
+		sendAdmissionValidationResponse(w, false, errMessage)
 		return
 	}
 
 	if route.Spec.TLS != nil {
-		sendAdmissionValidationRouterResponse(w, true, "Router is secure, proceed request")
+		sendAdmissionValidationResponse(w, true, "Router is secure, proceed request")
 	} else {
 		sendAdmissionMutationRouterResponse(ar.Request.UID, w)
 	}
@@ -133,34 +133,48 @@ func CreateRouteOnServiceWebHookHandler(w http.ResponseWriter, r *http.Request) 
 	// admission response will be sent to K8S API
 	if len(body) == 0 {
 		errMessage := "The body is empty, can't proceed the request"
-		sendAdmissionValidationRouterResponse(w, false, errMessage)
+		sendAdmissionValidationResponse(w, false, errMessage)
 		logrus.Errorf(errMessage)
 		return
 	}
-	// This object gonna hold actual service
-	var service = corev1.Service{}
+
 	ar := v1beta1.AdmissionReview{}
 	// Try to decode body into Admission Review object
 	if _, _, err := deserializer.Decode(body, nil, &ar); err != nil {
 		logrus.Errorf("Error during deserializing request body: %v", err)
-		sendAdmissionValidationRouterResponse(w, false, "error during deserializing request body")
-		return
-	}
-	// Try to unmarshal Admission Review raw object to Router
-	if err := json.Unmarshal(ar.Request.Object.Raw, &service); err != nil {
-		errMessage := "Error during unmarshaling request body"
-		logrus.Error(errMessage)
-		sendAdmissionValidationRouterResponse(w, false, errMessage)
+		sendAdmissionValidationResponse(w, false, "error during deserializing request body")
 		return
 	}
 
-	if value, ok := service.Labels["addRoute"]; ok {
-		if value == "true" {
-			CreateRouteForService(service.Name, service.Namespace)
-			logrus.Infof("asd")
+	if ar.Request.Operation == "CREATE" {
+		// This object gonna hold actual service
+		var service = corev1.Service{}
+		// Try to unmarshal Admission Review raw object to Router
+		if err := json.Unmarshal(ar.Request.Object.Raw, &service); err != nil {
+			errMessage := "Error during unmarshaling request body"
+			logrus.Error(errMessage)
+			sendAdmissionValidationResponse(w, false, errMessage)
+			return
+		}
+
+		if value, ok := service.Labels["addRoute"]; ok {
+			if value == "true" {
+				err := CreateRouteForService(service.Name, service.Namespace)
+				if err != nil {
+					sendAdmissionValidationResponse(w, false, err.Error())
+				}
+			}
 		}
 	}
 
+	if ar.Request.Operation == "DELETE" {
+		err := DeleteRouteForService(ar.Request.Name, ar.Request.Namespace)
+		if err != nil {
+			sendAdmissionValidationResponse(w, false, err.Error())
+		}
+	}
+	// All good proceed with request
+	sendAdmissionValidationResponse(w, true, "All good, proceed request")
 }
 
 func sendAdmissionMutationRouterResponse(uuid types.UID, w http.ResponseWriter) {
@@ -188,7 +202,7 @@ func sendAdmissionMutationRouterResponse(uuid types.UID, w http.ResponseWriter) 
 	}
 }
 
-func sendAdmissionValidationRouterResponse(w http.ResponseWriter, isAllowed bool, message string) {
+func sendAdmissionValidationResponse(w http.ResponseWriter, isAllowed bool, message string) {
 	var admissionResponse *v1beta1.AdmissionResponse
 	admissionResponse = &v1beta1.AdmissionResponse{Allowed: isAllowed, Result: &metav1.Status{Message: message}}
 	admissionReview := v1beta1.AdmissionReview{}
@@ -205,19 +219,38 @@ func sendAdmissionValidationRouterResponse(w http.ResponseWriter, isAllowed bool
 	}
 }
 
-func CreateRouteForService(serviceName string, namespace string) {
+func CreateRouteForService(serviceName string, namespace string) error {
 	var route = routev1.Route{}
 	route.Name = fmt.Sprintf("%s-route", serviceName)
 	route.Spec.To = routev1.RouteTargetReference{Kind: "Service", Name: serviceName}
-
 	routerv1Client, err := routev1Configs.NewForConfig(getClientcmdConfigs())
 	if err != nil {
-		logrus.Fatalf(err.Error())
+		logrus.Errorf(err.Error())
+		return err
+
 	}
 	_, err = routerv1Client.Routes(namespace).Create(&route)
 	if err != nil {
-		logrus.Fatalf(err.Error())
+		logrus.Errorf(err.Error())
+		return err
 	}
+	return nil
+}
+
+func DeleteRouteForService(serviceName string, namespace string) error {
+
+	routerv1Client, err := routev1Configs.NewForConfig(getClientcmdConfigs())
+	if err != nil {
+		logrus.Errorf(err.Error())
+		return err
+	}
+	routeNameForDelete := fmt.Sprintf("%s-route", serviceName)
+	err = routerv1Client.Routes(namespace).Delete(routeNameForDelete, nil)
+	if err != nil {
+		logrus.Errorf(err.Error())
+		return err
+	}
+	return nil
 }
 
 func getClientcmdConfigs() *rest.Config {
