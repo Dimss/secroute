@@ -9,10 +9,9 @@ oc create -f https://raw.githubusercontent.com/Dimss/secroute/master/ocp/routes/
 # Create secure route
 oc create -f https://raw.githubusercontent.com/Dimss/secroute/master/ocp/routes/secure-route.yaml
  
-# Cleanup
-# Delete route
+# Cleanup route
 oc delete -f https://raw.githubusercontent.com/Dimss/secroute/master/ocp/routes/secure-route.yaml
-# Delete webhook configuration
+# Cleanup webhook configuration
 oc delete -f https://raw.githubusercontent.com/Dimss/secroute/master/ocp/webhooks/validate-route-webhook.yaml
 ```
 
@@ -23,4 +22,22 @@ oc delete -f https://raw.githubusercontent.com/Dimss/secroute/master/ocp/webhook
 oc create -f https://raw.githubusercontent.com/Dimss/secroute/master/ocp/webhooks/mutate-route-webhook.yaml
 # Create insecure route 
 oc create -f https://raw.githubusercontent.com/Dimss/secroute/master/ocp/routes/insecure-route.yaml
+# Check created route
+oc get route -o yaml demo-insecure-route 
+
+# Cleanup route 
+oc delete -f https://raw.githubusercontent.com/Dimss/secroute/master/ocp/routes/insecure-route.yaml
+# Cleanup webhook configuration
+oc delete -f https://raw.githubusercontent.com/Dimss/secroute/master/ocp/webhooks/mutate-route-webhook.yaml
+
+```
+
+
+### Use case 3 - Mutation Side effect Webhook
+```bash
+# Deploy Webhooks configuration
+oc create -f https://raw.githubusercontent.com/Dimss/secroute/master/ocp/webhooks/validate-service-webhook.yaml
+# Create service 
+oc create -f https://raw.githubusercontent.com/Dimss/secroute/master/ocp/services/service.yaml
+
 ```

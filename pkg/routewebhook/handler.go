@@ -225,6 +225,7 @@ func CreateRouteForService(serviceName string, namespace string) error {
 	route.Spec.To = routev1.RouteTargetReference{Kind: "Service", Name: serviceName}
 	routerv1Client, err := routev1Configs.NewForConfig(getClientcmdConfigs())
 	if err != nil {
+
 		logrus.Errorf(err.Error())
 		return err
 
