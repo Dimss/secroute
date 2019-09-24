@@ -1,9 +1,14 @@
 ## SECRouter - Admission Controller Webhook Server for Securing OCP Routes and Services
 
+## Development environment setup
+
+### Write your POST handlers 
+
+
 ### Use case 1 - Simple Validation Webhook
 ```bash
 # Deploy Webhook Configuration 
-oc create -f https://raw.githubusercontent.com/Dimss/secroute/master/ocp/webhooks/validate-route-webhook.yaml
+oc create -f https://raw.githubusercontent.com/Dimss/secroute/master/ocp/webhooks/block-insecure-route.yaml
 # Create insecure route 
 oc create -f https://raw.githubusercontent.com/Dimss/secroute/master/ocp/routes/insecure-route.yaml
 # Create secure route
@@ -12,7 +17,7 @@ oc create -f https://raw.githubusercontent.com/Dimss/secroute/master/ocp/routes/
 # Cleanup route
 oc delete -f https://raw.githubusercontent.com/Dimss/secroute/master/ocp/routes/secure-route.yaml
 # Cleanup webhook configuration
-oc delete -f https://raw.githubusercontent.com/Dimss/secroute/master/ocp/webhooks/validate-route-webhook.yaml
+oc delete -f https://raw.githubusercontent.com/Dimss/secroute/master/ocp/webhooks/block-insecure-route.yaml
 ```
 
 ### Use case 2 - Mutation Webhook
