@@ -1,6 +1,6 @@
 {
   "http": {
-    "crt": "/Users/dima/certs/server.crt",
-    "key": "/Users/dima/certs/server-key.pem"
+    "crt": "/Users/dima/.go/src/github.com/secroute/deploy/k8s-certs/server.crt",
+    "key": "/Users/dima/.go/src/github.com/secroute/deploy/k8s-certs/server-key.pem"
   }
 }
