@@ -1,3 +1,6 @@
 .idea
 vendor
 deploy/setuptls/webhook_deployment
+demos/0-setup/k8s-certs/server.crt
+demos/0-setup/k8s-certs/server.csr
+demos/0-setup/k8s-certs/server-key.pem
