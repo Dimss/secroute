@@ -1,7 +1,7 @@
 apiVersion: admissionregistration.k8s.io/v1beta1
 kind: MutatingWebhookConfiguration
 metadata:
-  name: create-secure-route
+  name: create.secureroute
 webhooks:
   - name: secroute.rhte-demo-webhooks.svc.cluster.local
     clientConfig:

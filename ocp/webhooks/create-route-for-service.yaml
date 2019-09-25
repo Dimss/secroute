@@ -1,7 +1,7 @@
 apiVersion: admissionregistration.k8s.io/v1beta1
 kind: ValidatingWebhookConfiguration
 metadata:
-  name: create-route-for-service
+  name: create.route.for.service
 webhooks:
   - name: secroute.rhte-webhooks-demo.svc.cluster.local
     clientConfig:
