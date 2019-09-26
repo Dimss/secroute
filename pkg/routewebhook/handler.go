@@ -66,6 +66,7 @@ func ValidateRouteWebHookHandler(w http.ResponseWriter, r *http.Request) {
 		sendAdmissionValidationResponse(w, false, errMessage)
 		return
 	}
+	// Validation if route is secure
 	if route.Spec.TLS == nil {
 		errMessage := fmt.Sprintf("Creation of insecure routes are forbiden, route: %v", route.Name)
 		logrus.Warn(errMessage)
